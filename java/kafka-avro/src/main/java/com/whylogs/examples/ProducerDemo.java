@@ -1,13 +1,17 @@
 package com.whylogs.examples;
 
-import com.whylabs;
+import com.whylogs.LendingClubRow;
 import com.whylogs.core.DatasetProfile;
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.errors.SerializationException;
 
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -38,44 +42,63 @@ public class ProducerDemo {
             .withFirstRecordAsHeader()
             .withNullString("")
             .withDelimiter(',');
-    public static final String INPUT_FILE_NAME = "Fire_Department_Calls_for_Service.csv";
+    public static final String INPUT_FILE_NAME = "lending_club_1000.csv";
     public static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+
+    private static final String TOPIC = "whylogs-events";
+    private static final Properties props = new Properties();
+    private static String configFile;
+
 
     public static void main(String[] args) throws Exception {
         final String sessionId = UUID.randomUUID().toString();
         final Instant now = Instant.now();
 
-
-        Schema schema = value_lending_club.getClassSchema();
-
-        Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
                 org.apache.kafka.common.serialization.StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                 io.confluent.kafka.serializers.KafkaAvroSerializer.class);
         props.put("schema.registry.url", "http://localhost:8081");
-        KafkaProducer producer = new KafkaProducer(props);
 
         // map for storing the result
         final Map<Instant, DatasetProfile> result = new HashMap<>();
         System.out.println("opening " + INPUT_FILE_NAME);
 
-        try (final InputStreamReader is = new InputStreamReader(ProducerDemo.class.getResourceAsStream(INPUT_FILE_NAME))) {
-            final CSVParser parser = new CSVParser(is, CSV_FORMAT);
+        try (KafkaProducer producer = new KafkaProducer(props)) {
 
-            // iterate through records
-            for (final CSVRecord record : parser) {
-                // extract date time
-                final Instant dataTime = parseAndTruncateToYear(record.get(DATE_COLUMN));
-                
-                // create new dataset profile
-                final DatasetProfile profile = result.computeIfAbsent(dataTime,
-                        t -> new DatasetProfile(sessionId, now, t, Collections.emptyMap(), Collections.emptyMap()));
+            try (final InputStreamReader is = new InputStreamReader(ProducerDemo.class.getResourceAsStream(INPUT_FILE_NAME))) {
+                final CSVParser parser = new CSVParser(is, CSV_FORMAT);
 
-                // track multiple features
-                profile.track(record.toMap());
+                // m = parser.getHeaderMap();
+
+                    // iterate through records
+                for (final CSVRecord record : parser) {
+
+                    final String orderId = "id" + Long.toString(1);
+                    final LendingClubRow value = new LendingClubRow();
+                    final Schema schema = value.getSchema();
+
+                    GenericRecord avroRecord = new GenericData.Record(schema);
+
+                    // iterate iver headermap
+                    // for each header, get vakkue from CSV record
+                    // and put to avrorecord
+                    for (Map.Entry<String,String> entry : record.toMap().entrySet()) {
+                        System.out.println("setting field " + entry.getKey());
+                        avroRecord.put(entry.getKey(), entry.getValue());
+                    }
+                    final ProducerRecord<Object, Object> precord = new ProducerRecord<>(TOPIC, "", avroRecord);
+                    System.out.println("sending event ");
+
+                    producer.send(precord);
+
+                    // Thread.sleep(1000L);
+
+                }
             }
+        } catch (final SerializationException e) {
+            e.printStackTrace();
         }
 
         System.out.println("Number of profiles: " + result.size());

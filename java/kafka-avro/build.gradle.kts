@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClassName = "com.whylogs.examples.WhyLogsDemo"
+    mainClassName = "com.whylogs.examples.ProducerDemo"
 }
 
 group = "com.whylogs.example"
@@ -24,9 +24,13 @@ dependencies {
     implementation("io.confluent:kafka-avro-serializer:6.1.0")
 }
 
+// /Volumes/Workspace/whylogs-examples/java/kafka-avro/build/generated-main-avro-java/com/whylabs/value_lending_club.java
+//sourceSets.main {
+//    java.srcDirs("build/generated-main-avro-java/**")
+//}
 
 avro {
-    isCreateSetters.set(true)
+    isCreateSetters.set(false)
     isCreateOptionalGetters.set(false)
     isGettersReturnOptional.set(false)
     isOptionalGettersForNullableFieldsOnly.set(false)

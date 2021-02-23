@@ -1,7 +1,7 @@
 {
   "type": "record",
-  "namespace": "com.whylabs",
-  "name": "value_lending_club",
+  "namespace": "com.whylogs",
+  "name": "LendingClubRow",
   "doc": "",
   "fields": [
     {
