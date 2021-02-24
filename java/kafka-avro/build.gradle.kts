@@ -25,11 +25,7 @@ dependencies {
     implementation("joda-time:joda-time:2.10.10")
 }
 
-// /Volumes/Workspace/whylogs-examples/java/kafka-avro/build/generated-main-avro-java/com/whylabs/value_lending_club.java
-//sourceSets.main {
-//    java.srcDirs("build/generated-main-avro-java/**")
-//}
-
+// configuration of avro class generation plugin
 avro {
     isCreateSetters.set(false)
     isCreateOptionalGetters.set(false)
@@ -41,3 +37,16 @@ avro {
     templateDirectory.set(null as String?)
     isEnableDecimalLogicalType.set(true)
 }
+
+task<Exec>("consumer") {
+    dependsOn("build")
+    // description("Run the whylogs consumer class with ExecTask")
+    commandLine( "java", "-classpath", sourceSets["main"].runtimeClasspath.getAsPath(), "com.whylogs.examples.ConsumerDemo")
+}
+
+task<Exec>("producer") {
+    dependsOn("build")
+    // description("Run the whylogs producer class with ExecTask")
+    commandLine( "java", "-classpath", sourceSets["main"].runtimeClasspath.getAsPath(), "com.whylogs.examples.ProducerDemo")
+}
+

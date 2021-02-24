@@ -19,12 +19,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static java.time.Instant.now;
 
 /**
  * An example of processing a CSV dataset.
@@ -79,76 +78,45 @@ public class ConsumerDemo {
         props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
 
         final String sessionId = UUID.randomUUID().toString();
-        final Instant now = Instant.now();
-
-        // map for storing the result
-        final Map<Instant, DatasetProfile> result = new HashMap<>();
+        final Instant now = now();
+        final DatasetProfile profile = new DatasetProfile(sessionId, now, null, Collections.emptyMap(), Collections.emptyMap());
 
         try (final KafkaConsumer<String, LendingClubRow> consumer = new KafkaConsumer<>(props)) {
             consumer.subscribe(Collections.singletonList(TOPIC));
-
+            int count = 0;
             while (true) {
                 final ConsumerRecords<String, LendingClubRow> records = consumer.poll(Duration.ofMillis(1000));
                 System.out.format("Read %d records\n", records.count());
+                count += records.count();
                 for (final ConsumerRecord<String, LendingClubRow> record : records) {
                     final String key = record.key();
                     final LendingClubRow value = record.value();
-                    System.out.printf("key = %s, value = %s%n", key, value);
+                    Map<String, Object> map = new HashMap<>();
+                    value.getClassSchema().getFields().forEach(field ->
+                            map.put(field.name(), value.get(field.name())));
+
+                    // track multiple features
+                    profile.track(map);
                 }
                 if (records.count() == 0)
                         break;
             }
-
+            System.out.format("Received %d events\n", count);
         }
-
-//        try (final InputStreamReader is = new InputStreamReader(ConsumerDemo.class.getResourceAsStream(INPUT_FILE_NAME))) {
-//            final CSVParser parser = new CSVParser(is, CSV_FORMAT);
-//
-//            // iterate through records
-//            for (final CSVRecord record : parser) {
-//                // extract date time
-//                final Instant dataTime = parseAndTruncateToYear(record.get(DATE_COLUMN));
-//
-//                // create new dataset profile
-//                final DatasetProfile profile = result.computeIfAbsent(dataTime,
-//                        t -> new DatasetProfile(sessionId, now, t, Collections.emptyMap(), Collections.emptyMap()));
-//
-//                // track multiple features
-//                profile.track(record.toMap());
-//            }
-//        }
-
-        System.out.println("Number of profiles: " + result.size());
 
         // write to a folder called "output"
         final Path output = Paths.get("output");
         Files.createDirectories(output);
 
-        for (Map.Entry<Instant, DatasetProfile> entry : result.entrySet()) {
-            final DatasetProfile profile = entry.getValue();
-            // associate the year with filename
-            final String fileName = String.format("profile_%s.bin", entry.getKey().atZone(ZoneOffset.UTC).getYear());
+        // associate the year with filename
+        final String fileName = String.format("profile_%s.bin", Instant.now().atZone(ZoneOffset.UTC).getYear());
 
-            // write out the output
-            try (final OutputStream os =
-                         Files.newOutputStream(output.resolve(fileName), StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
-                profile.toProtobuf().build().writeDelimitedTo(os);
-            }
+        // write out the output
+        System.out.format("Writing profile to %s\n", fileName);
+        try (final OutputStream os =
+                     Files.newOutputStream(output.resolve(fileName), StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
+            profile.toProtobuf().build().writeDelimitedTo(os);
         }
-    }
 
-    /**
-     * Parse a text to an Instant object. This is used to extract data from the CSV and map
-     * them into DatasetProfile's dataset_timestamp
-     *
-     * @param text input text
-     * @return time in UTC as {@link Instant}
-     */
-    private static Instant parseAndTruncateToYear(String text) {
-        return LocalDate.parse(text, DATE_TIME_FORMAT)
-                .atStartOfDay()
-                .withDayOfMonth(1)
-                .withMonth(1)
-                .atZone(ZoneOffset.UTC).toInstant();
     }
 }
