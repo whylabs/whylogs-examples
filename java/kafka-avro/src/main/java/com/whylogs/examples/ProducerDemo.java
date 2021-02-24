@@ -76,7 +76,6 @@ public class ProducerDemo {
 
                     // iterate through records
                 for (final CSVRecord record : parser) {
-                    System.out.println(record);
                     final String orderId = "id" + Long.toString(1);
                     final LendingClubRow value = new LendingClubRow();
                     final Schema schema = value.getSchema();

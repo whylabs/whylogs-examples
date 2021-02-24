@@ -228,7 +228,6 @@ public class CsvToAvroGenericWriter {
                 Schema.Field field = avroFields.get(i);
                 // retrieve a field from the Avro SpecificRecord
                 String csf = fields.next();
-                System.out.format("getObject avro:%s csv:%s\n", field, csf);
                 Object object = getObject(field, csf);
                 // add the object to the corresponding field
                 record.put(i, object);
