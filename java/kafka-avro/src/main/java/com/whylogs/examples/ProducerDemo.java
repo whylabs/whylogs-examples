@@ -44,7 +44,6 @@ public class ProducerDemo {
             .withNullString("")
             .withDelimiter(',');
     public static final String INPUT_FILE_NAME = "lending_club_1000.csv";
-    public static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
 
     private static final String TOPIC = "whylogs-events";
     private static final Properties props = new Properties();
@@ -94,18 +93,4 @@ public class ProducerDemo {
 
     }
 
-    /**
-     * Parse a text to an Instant object. This is used to extract data from the CSV and map
-     * them into DatasetProfile's dataset_timestamp
-     *
-     * @param text input text
-     * @return time in UTC as {@link Instant}
-     */
-    private static Instant parseAndTruncateToYear(String text) {
-        return LocalDate.parse(text, DATE_TIME_FORMAT)
-                .atStartOfDay()
-                .withDayOfMonth(1)
-                .withMonth(1)
-                .atZone(ZoneOffset.UTC).toInstant();
-    }
 }

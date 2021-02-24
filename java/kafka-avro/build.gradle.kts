@@ -44,6 +44,14 @@ task<Exec>("consumer") {
     commandLine( "java", "-classpath", sourceSets["main"].runtimeClasspath.getAsPath(), "com.whylogs.examples.ConsumerDemo")
 }
 
+
+tasks.withType<JavaCompile>().configureEach {
+    // warn about deprecated code.
+    options.setDeprecation(true)
+    //  Sets any additional arguments to be passed to the compiler.
+    options.setCompilerArgs(listOf("-Xlint:unchecked"))
+}
+
 task<Exec>("producer") {
     dependsOn("build")
     // description("Run the whylogs producer class with ExecTask")

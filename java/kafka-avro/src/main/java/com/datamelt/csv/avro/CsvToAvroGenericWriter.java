@@ -315,13 +315,13 @@ public class CsvToAvroGenericWriter {
                 if (fieldType == Schema.Type.STRING) {
                     return value;
                 } else if (fieldType == Schema.Type.INT) {
-                    return new Integer(0);
+                    return 0;
                 } else if (fieldType == Schema.Type.LONG) {
-                    return new Long(0);
+                    return (long) 0;
                 } else if (fieldType == Schema.Type.DOUBLE) {
-                    return new Double(0);
+                    return (double) 0;
                 } else if (fieldType == Schema.Type.FLOAT) {
-                    return new Float(0.0);
+                    return (float) 0;
                 } else if (fieldType == Schema.Type.BOOLEAN) {
                     return Boolean.FALSE;
                 } else {
