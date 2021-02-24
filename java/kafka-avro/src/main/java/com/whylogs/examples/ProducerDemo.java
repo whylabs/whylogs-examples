@@ -1,5 +1,6 @@
 package com.whylogs.examples;
 
+import com.datamelt.csv.avro.CsvToAvroGenericWriter;
 import com.whylogs.LendingClubRow;
 import com.whylogs.core.DatasetProfile;
 import org.apache.avro.Schema;
@@ -65,6 +66,7 @@ public class ProducerDemo {
         final Map<Instant, DatasetProfile> result = new HashMap<>();
         System.out.println("opening " + INPUT_FILE_NAME);
 
+
         try (KafkaProducer producer = new KafkaProducer(props)) {
 
             try (final InputStreamReader is = new InputStreamReader(ProducerDemo.class.getResourceAsStream(INPUT_FILE_NAME))) {
@@ -74,20 +76,15 @@ public class ProducerDemo {
 
                     // iterate through records
                 for (final CSVRecord record : parser) {
-
+                    System.out.println(record);
                     final String orderId = "id" + Long.toString(1);
                     final LendingClubRow value = new LendingClubRow();
                     final Schema schema = value.getSchema();
 
-                    GenericRecord avroRecord = new GenericData.Record(schema);
+                    CsvToAvroGenericWriter csv2avro = new CsvToAvroGenericWriter(schema);
 
-                    // iterate iver headermap
-                    // for each header, get vakkue from CSV record
-                    // and put to avrorecord
-                    for (Map.Entry<String,String> entry : record.toMap().entrySet()) {
-                        System.out.println("setting field " + entry.getKey());
-                        avroRecord.put(entry.getKey(), entry.getValue());
-                    }
+                    GenericRecord avroRecord = csv2avro.populate(record.iterator());
+
                     final ProducerRecord<Object, Object> precord = new ProducerRecord<>(TOPIC, "", avroRecord);
                     System.out.println("sending event ");
 

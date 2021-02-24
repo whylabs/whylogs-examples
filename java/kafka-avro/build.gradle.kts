@@ -22,6 +22,7 @@ dependencies {
     implementation("org.apache.avro:avro:1.8.2")
     implementation("org.apache.kafka:kafka-clients:2.7.0")
     implementation("io.confluent:kafka-avro-serializer:6.1.0")
+    implementation("joda-time:joda-time:2.10.10")
 }
 
 // /Volumes/Workspace/whylogs-examples/java/kafka-avro/build/generated-main-avro-java/com/whylabs/value_lending_club.java

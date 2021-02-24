@@ -113,10 +113,7 @@
       "name": "issue_d",
       "type": [
         "null",
-        {
-          "type": "long",
-          "logicalType": "timestamp-micros"
-        }
+        "string"
       ]
     },
     {
