@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClassName = "com.whylogs.examples.ProducerDemo"
+    mainClassName = "com.whylogs.examples.ConsumerDemo"
 }
 
 group = "com.whylogs.example"

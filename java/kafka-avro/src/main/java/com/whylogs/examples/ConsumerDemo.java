@@ -1,24 +1,30 @@
 package com.whylogs.examples;
 
+import com.whylogs.LendingClubRow;
 import com.whylogs.core.DatasetProfile;
+import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * An example of processing a CSV dataset.
@@ -31,39 +37,86 @@ import java.util.UUID;
  * guarantee constant memory usage.
  */
 public class ConsumerDemo {
-
     public static final String DATE_COLUMN = "Call Date";
     public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT
             .withFirstRecordAsHeader()
             .withNullString("")
             .withDelimiter(',');
-    public static final String INPUT_FILE_NAME = "Fire_Department_Calls_for_Service.csv";
     public static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
 
+    private static final String TOPIC = "whylogs-events";
+    //private static final String TOPIC = "transactions";
+
+    private static final Properties props = new Properties();
+    private static String configFile;
+
     public static void main(String[] args) throws Exception {
+        if (args.length < 1) {
+            // Backwards compatibility, assume localhost
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+            props.put(AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://localhost:8081");
+        } else {
+            // Load properties from a local configuration file
+            // Create the configuration file (e.g. at '$HOME/.confluent/java.config') with configuration parameters
+            // to connect to your Kafka cluster, which can be on your local host, Confluent Cloud, or any other cluster.
+            // Documentation at https://docs.confluent.io/platform/current/tutorials/examples/clients/docs/java.html
+            configFile = args[0];
+            if (!Files.exists(Paths.get(configFile))) {
+                throw new IOException(configFile + " not found.");
+            } else {
+                try (InputStream inputStream = new FileInputStream(configFile)) {
+                    props.load(inputStream);
+                }
+            }
+        }
+
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "ctest-payments");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
+        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true);
+
         final String sessionId = UUID.randomUUID().toString();
         final Instant now = Instant.now();
 
         // map for storing the result
         final Map<Instant, DatasetProfile> result = new HashMap<>();
-        System.out.println("opening " + INPUT_FILE_NAME);
 
-        try (final InputStreamReader is = new InputStreamReader(ConsumerDemo.class.getResourceAsStream(INPUT_FILE_NAME))) {
-            final CSVParser parser = new CSVParser(is, CSV_FORMAT);
+        try (final KafkaConsumer<String, LendingClubRow> consumer = new KafkaConsumer<>(props)) {
+            consumer.subscribe(Collections.singletonList(TOPIC));
 
-            // iterate through records
-            for (final CSVRecord record : parser) {
-                // extract date time
-                final Instant dataTime = parseAndTruncateToYear(record.get(DATE_COLUMN));
-                
-                // create new dataset profile
-                final DatasetProfile profile = result.computeIfAbsent(dataTime,
-                        t -> new DatasetProfile(sessionId, now, t, Collections.emptyMap(), Collections.emptyMap()));
-
-                // track multiple features
-                profile.track(record.toMap());
+            while (true) {
+                final ConsumerRecords<String, LendingClubRow> records = consumer.poll(Duration.ofMillis(1000));
+                System.out.format("Read %d records\n", records.count());
+                for (final ConsumerRecord<String, LendingClubRow> record : records) {
+                    final String key = record.key();
+                    final LendingClubRow value = record.value();
+                    System.out.printf("key = %s, value = %s%n", key, value);
+                }
+                if (records.count() == 0)
+                        break;
             }
+
         }
+
+//        try (final InputStreamReader is = new InputStreamReader(ConsumerDemo.class.getResourceAsStream(INPUT_FILE_NAME))) {
+//            final CSVParser parser = new CSVParser(is, CSV_FORMAT);
+//
+//            // iterate through records
+//            for (final CSVRecord record : parser) {
+//                // extract date time
+//                final Instant dataTime = parseAndTruncateToYear(record.get(DATE_COLUMN));
+//
+//                // create new dataset profile
+//                final DatasetProfile profile = result.computeIfAbsent(dataTime,
+//                        t -> new DatasetProfile(sessionId, now, t, Collections.emptyMap(), Collections.emptyMap()));
+//
+//                // track multiple features
+//                profile.track(record.toMap());
+//            }
+//        }
 
         System.out.println("Number of profiles: " + result.size());
 

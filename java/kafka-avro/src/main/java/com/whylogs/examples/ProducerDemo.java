@@ -71,25 +71,20 @@ public class ProducerDemo {
 
             try (final InputStreamReader is = new InputStreamReader(ProducerDemo.class.getResourceAsStream(INPUT_FILE_NAME))) {
                 final CSVParser parser = new CSVParser(is, CSV_FORMAT);
+                final LendingClubRow value = new LendingClubRow();
+                final Schema schema = value.getSchema();
+                final CsvToAvroGenericWriter csv2avro = new CsvToAvroGenericWriter(schema);
 
-                // m = parser.getHeaderMap();
-
-                    // iterate through records
+                // iterate through records
                 for (final CSVRecord record : parser) {
                     final String orderId = "id" + Long.toString(1);
-                    final LendingClubRow value = new LendingClubRow();
-                    final Schema schema = value.getSchema();
-
-                    CsvToAvroGenericWriter csv2avro = new CsvToAvroGenericWriter(schema);
 
                     GenericRecord avroRecord = csv2avro.populate(record.iterator());
 
                     final ProducerRecord<Object, Object> precord = new ProducerRecord<>(TOPIC, "", avroRecord);
-                    System.out.println("sending event ");
 
                     producer.send(precord);
-
-                    // Thread.sleep(1000L);
+                    System.out.println("Sent event...");
 
                 }
             }
@@ -97,23 +92,6 @@ public class ProducerDemo {
             e.printStackTrace();
         }
 
-        System.out.println("Number of profiles: " + result.size());
-
-        // write to a folder called "output"
-        final Path output = Paths.get("output");
-        Files.createDirectories(output);
-
-        for (Map.Entry<Instant, DatasetProfile> entry : result.entrySet()) {
-            final DatasetProfile profile = entry.getValue();
-            // associate the year with filename
-            final String fileName = String.format("profile_%s.bin", entry.getKey().atZone(ZoneOffset.UTC).getYear());
-
-            // write out the output
-            try (final OutputStream os =
-                         Files.newOutputStream(output.resolve(fileName), StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
-                profile.toProtobuf().build().writeDelimitedTo(os);
-            }
-        }
     }
 
     /**
