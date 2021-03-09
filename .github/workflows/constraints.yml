@@ -1,0 +1,25 @@
+
+on: [push]
+
+jobs:
+  whylogs_constraints:
+    runs-on: ubuntu-latest
+    name: validates data against whylogs constraints
+    steps:
+      # To use this repository's private action,
+      # you must check out the repository
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: expect constraints to fail step
+        uses: whylabs/whylogs_action@v1
+        id: expect-failure
+        with:
+          constraintsfile: 'github-actions/constraints-fail.json'
+          datafile: 'python/lending_club_1000.csv'
+          expect_failure: 'True'
+      - name: expect constraints to succeed step
+        uses: whylabs/whylogs_action@v1
+        id: expect-success
+        with:
+          constraintsfile: 'github-actions/constraints-succeed.json'
+          datafile: 'python/lending_club_1000.csv'

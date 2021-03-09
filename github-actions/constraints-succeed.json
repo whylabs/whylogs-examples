@@ -1,0 +1,15 @@
+{
+  "summaryConstraints": {
+    "annual_inc": {
+      "constraints": [
+        {
+          "name": "summary min GE 0/None",
+          "first_field": "min",
+          "value": 0.0,
+          "op": "GE",
+          "verbose": false
+        }
+      ]
+    }
+  }
+}
