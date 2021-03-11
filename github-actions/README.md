@@ -1,10 +1,10 @@
 
-Whylogs can help monitor your ML datasets as part of your GitOps CI/CD pipeline.
+whylogs can help monitor your ML datasets as part of your GitOps CI/CD pipeline.
 
 The github action used in this example is defined in `.github/workflows/constraints.yml`.
 It specifies what actions to take whenever commits are pushed to this repo.
 
-This directory contains Whylogs constraints that are applied to a dataset as part of the Github action.
+This directory contains whylogs constraints that are applied to a dataset as part of the Github action.
 Constraints assert that a logged value or summary statistic is within an expected range.  
 
 ```yaml
@@ -26,10 +26,10 @@ Constraints assert that a logged value or summary statistic is within an expecte
 We define two steps in our action.  The first runs a set of constraints that are expected to fail.  That 
 is done just to check that the constraint logic is working as expected.  The second step applies a set of constraints that are expected to succeed.
 
-##Action Tags
+## Action Tags
 
 `uses:` references the prepackaged action in the`whylabs/whylogs_action` repo.
-That tells github how to run Whylogs on parameters you supply.  This is a tag common to all Github actions.
+That tells github how to run whylogs on parameters you supply.  This is a tag common to all Github actions.
 
 `constraintsfile:` points to a file of constraints defined in this repo.
 
@@ -39,12 +39,12 @@ is anything that the pandas package can load, but CSV works well.
 `expect_failure:` indicates whether the action is expected to fail or not. Actions are usually 
 written to expect success; we include this flag for completeness.
 
-##Constraint Definition
+## Constraint Definition
 
-Whylogs constraints are specified in JSON. 
+whylogs constraints are specified in JSON. 
 Each constraint is bound to a column in the data, and each column may have multiple constraints.
 Standard boolean comparison operators are supported -- LT, LE, EQ, NE, GE, GT.
-We are actively extending Whylogs to support other constraint operators, for example, 
+We are actively extending whylogs to support other constraint operators, for example, 
 to match regex on strings or to test image features.
 
 Example:
