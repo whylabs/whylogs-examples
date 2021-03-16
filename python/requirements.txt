@@ -3,4 +3,4 @@ certifi
 chardet
 matplotlib
 numpy
-whylogs==0.1.10
+whylogs
