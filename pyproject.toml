@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "whylogs-examples"
+version = "0.6.26"
+description = "Profile and monitor your ML data pipeline end-to-end"
+authors = ["WhyLabs.ai <support@whylabs.ai>"]
+license = "Apache-2.0"
+include = [
+#  "src/whylogs/proto/*.py",
+#  "README.md",
+#  "CHANGELOG.rst",
+#  "CODE_OF_CONDUCT.md",
+#  "DEVELOPMENT.md"
+]
+readme = "README.md"
+repository = "https://github.com/whylabs/whylogs-examples"
+homepage = "https://docs.whylabs.ai"
+keywords = ["machine learning", "data profiling", "data quality", "data logging"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[tool.poetry.scripts]
+#whylogs = 'whylogs.cli:main'
+#whylogs-demo = 'whylogs.cli:demo_main'
+
+[tool.poetry.dependencies]
+python = ">=3.6.1,<3.10"
+pandas = ">=1.0.0"
+whylogs = ">=0.6.26"
+
+[tool.poetry.dev-dependencies]
+pytest = "6.2.5"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
